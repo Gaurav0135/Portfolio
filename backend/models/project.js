@@ -5,9 +5,11 @@ const projectSchema = new mongoose.Schema(
     title: String,
     description: String,
     image: String,
+    linkedinLink: String,
     githubLink: String,
     githubLink2: String,
     liveLink: String,
+    otherLink: String,
     techStack: [String],
     priority: {
       type: Number,

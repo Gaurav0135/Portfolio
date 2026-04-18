@@ -18,14 +18,17 @@ export const getProjects = async (req, res) => {
 // ADD project (with image)
 export const addProject = async (req, res) => {
   try {
-    const { title, description, githubLink, githubLink2, liveLink, techStack, priority } = req.body;
+    const { title, description, linkedinLink, githubLink, githubLink2, liveLink, otherLink, techStack, priority } = req.body;
+    const normalizedOtherLink = otherLink || githubLink2 || "";
 
     const project = new Project({
       title,
       description,
+      linkedinLink,
       githubLink,
-      githubLink2,
+      githubLink2: githubLink2 || normalizedOtherLink,
       liveLink,
+      otherLink: normalizedOtherLink,
       techStack: techStack
         ? techStack
             .split(",")
@@ -46,14 +49,23 @@ export const addProject = async (req, res) => {
 // UPDATE project
 export const updateProject = async (req, res) => {
   try {
-    const { title, description, githubLink, githubLink2, liveLink, techStack, priority } = req.body;
+    const { title, description, linkedinLink, githubLink, githubLink2, liveLink, otherLink, techStack, priority } = req.body;
+    const existingProject = await Project.findById(req.params.id);
+
+    if (!existingProject) {
+      return res.status(404).json({ msg: "Project not found" });
+    }
+
+    const normalizedOtherLink = otherLink || githubLink2 || existingProject.otherLink || existingProject.githubLink2 || "";
 
     const updatePayload = {
       title,
       description,
+      linkedinLink,
       githubLink,
-      githubLink2,
+      githubLink2: githubLink2 || existingProject.githubLink2 || normalizedOtherLink,
       liveLink,
+      otherLink: normalizedOtherLink,
       techStack: techStack
         ? techStack
             .split(",")
@@ -71,10 +83,6 @@ export const updateProject = async (req, res) => {
       new: true,
       runValidators: true,
     });
-
-    if (!updated) {
-      return res.status(404).json({ msg: "Project not found" });
-    }
 
     res.json(updated);
   } catch (err) {

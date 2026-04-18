@@ -4,9 +4,10 @@ import { API } from "../api/axios";
 const emptyProject = {
   title: "",
   description: "",
+  linkedinLink: "",
   githubLink: "",
-  githubLink2: "",
   liveLink: "",
+  otherLink: "",
   techStack: "",
   priority: "",
 };
@@ -24,8 +25,23 @@ const emptyCredential = {
   score: "",
   year: "",
   description: "",
+  credential: "",
+  liveUrl: "",
   fileUrl: "",
-  priority: "",
+};
+
+const emptyEducationEntry = {
+  title: "",
+  institution: "",
+  year: "",
+  score: "",
+  description: "",
+  fileUrl: "",
+};
+
+const emptyResume = {
+  title: "Resume",
+  fileUrl: "",
 };
 
 const PRIORITY_OPTIONS = Array.from({ length: 20 }, (_, index) => String(index + 1));
@@ -63,6 +79,12 @@ export default function Admin() {
 
   const [credentialForm, setCredentialForm] = useState(emptyCredential);
   const [editingCredentialId, setEditingCredentialId] = useState("");
+  const [credentialFile, setCredentialFile] = useState(null);
+  const [resumeForm, setResumeForm] = useState(emptyResume);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [educationForm, setEducationForm] = useState(emptyEducationEntry);
+  const [editingEducationId, setEditingEducationId] = useState("");
+  const [educationImage, setEducationImage] = useState(null);
   const [dragState, setDragState] = useState({ listType: "", itemId: "" });
 
   const [status, setStatus] = useState({ type: "", message: "" });
@@ -75,10 +97,15 @@ export default function Admin() {
         API.get("/skills"),
         API.get("/credentials"),
       ]);
+      const resumeRes = await API.get("/resume/current");
 
       setProjects(projectRes.data);
       setSkills(skillRes.data);
       setCredentials(credentialRes.data);
+      setResumeForm({
+        title: resumeRes.data?.title || "Resume",
+        fileUrl: resumeRes.data?.fileUrl || "",
+      });
     } catch (err) {
       setStatus({
         type: "error",
@@ -107,6 +134,18 @@ export default function Admin() {
   const resetCredentialForm = () => {
     setCredentialForm(emptyCredential);
     setEditingCredentialId("");
+    setCredentialFile(null);
+  };
+
+  const resetResumeForm = () => {
+    setResumeForm(emptyResume);
+    setResumeFile(null);
+  };
+
+  const resetEducationForm = () => {
+    setEducationForm(emptyEducationEntry);
+    setEditingEducationId("");
+    setEducationImage(null);
   };
 
   const submitProject = async (event) => {
@@ -116,9 +155,10 @@ export default function Admin() {
       const payload = new FormData();
       payload.append("title", projectForm.title);
       payload.append("description", projectForm.description);
+      payload.append("linkedinLink", projectForm.linkedinLink);
       payload.append("githubLink", projectForm.githubLink);
-      payload.append("githubLink2", projectForm.githubLink2);
       payload.append("liveLink", projectForm.liveLink);
+      payload.append("otherLink", projectForm.otherLink);
       payload.append("techStack", projectForm.techStack);
       if (projectForm.priority) payload.append("priority", projectForm.priority);
       if (projectImage) payload.append("image", projectImage);
@@ -160,9 +200,10 @@ export default function Admin() {
     setProjectForm({
       title: project.title || "",
       description: project.description || "",
+      linkedinLink: project.linkedinLink || "",
       githubLink: project.githubLink || "",
-      githubLink2: project.githubLink2 || "",
       liveLink: project.liveLink || "",
+      otherLink: project.otherLink || project.githubLink2 || "",
       techStack: (project.techStack || []).join(", "),
       priority: project.priority ? String(project.priority) : "",
     });
@@ -232,11 +273,23 @@ export default function Admin() {
     event.preventDefault();
 
     try {
+      const payload = new FormData();
+      payload.append("title", credentialForm.title);
+      payload.append("type", credentialForm.type);
+      payload.append("institution", credentialForm.institution);
+      payload.append("score", credentialForm.score);
+      payload.append("year", credentialForm.year);
+      payload.append("description", credentialForm.description);
+      payload.append("credential", credentialForm.credential);
+      payload.append("liveUrl", credentialForm.liveUrl);
+      payload.append("fileUrl", credentialForm.fileUrl);
+      if (credentialFile) payload.append("file", credentialFile);
+
       if (editingCredentialId) {
-        await API.put(`/credentials/${editingCredentialId}`, credentialForm);
+        await API.put(`/credentials/${editingCredentialId}`, payload);
         setStatus({ type: "success", message: "Credential updated." });
       } else {
-        await API.post("/credentials", credentialForm);
+        await API.post("/credentials", payload);
         setStatus({ type: "success", message: "Credential added." });
       }
 
@@ -259,9 +312,11 @@ export default function Admin() {
       score: item.score || "",
       year: item.year || "",
       description: item.description || "",
+      credential: item.credential || "",
+      liveUrl: item.liveUrl || "",
       fileUrl: item.fileUrl || "",
-      priority: item.priority ? String(item.priority) : "",
     });
+    setCredentialFile(null);
   };
 
   const removeCredential = async (id) => {
@@ -273,6 +328,86 @@ export default function Admin() {
     } catch (err) {
       setStatus({ type: "error", message: err.response?.data?.msg || "Delete failed." });
     }
+  };
+
+  const submitEducation = async (event) => {
+    event.preventDefault();
+
+    try {
+      const payload = new FormData();
+      payload.append("title", educationForm.title);
+      payload.append("type", "education");
+      payload.append("institution", educationForm.institution);
+      payload.append("score", educationForm.score);
+      payload.append("year", educationForm.year);
+      payload.append("description", educationForm.description);
+      payload.append("credential", "");
+      payload.append("liveUrl", "");
+      payload.append("fileUrl", educationForm.fileUrl || "");
+      if (educationImage) payload.append("file", educationImage);
+
+      if (editingEducationId) {
+        await API.put(`/credentials/${editingEducationId}`, payload, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        setStatus({ type: "success", message: "Education entry updated." });
+      } else {
+        await API.post("/credentials", payload, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        setStatus({ type: "success", message: "Education entry added." });
+      }
+
+      resetEducationForm();
+      await loadAllData();
+    } catch (err) {
+      setStatus({
+        type: "error",
+        message: err.response?.data?.error || err.response?.data?.msg || "Education save failed.",
+      });
+    }
+  };
+
+  const submitResume = async (event) => {
+    event.preventDefault();
+
+    try {
+      const payload = new FormData();
+      payload.append("title", resumeForm.title || "Resume");
+      if (resumeFile) payload.append("file", resumeFile);
+
+      await API.put("/resume/current", payload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setStatus({ type: "success", message: "Resume updated." });
+      setResumeFile(null);
+      await loadAllData();
+    } catch (err) {
+      setStatus({
+        type: "error",
+        message: err.response?.data?.error || err.response?.data?.msg || "Resume save failed.",
+      });
+    }
+  };
+
+  const editEducation = (item) => {
+    setEditingEducationId(item._id);
+    setEducationForm({
+      title: item.title || "",
+      institution: item.institution || "",
+      year: item.year || "",
+      score: item.score || "",
+      description: item.description || "",
+      fileUrl: item.fileUrl || "",
+    });
+    setEducationImage(null);
   };
 
   const reorderByIds = (items, draggedId, targetId) => {
@@ -356,6 +491,9 @@ export default function Admin() {
     await persistReorder(listType, reordered);
   };
 
+  const certificateItems = credentials.filter((item) => item.type !== "education");
+  const educationItems = credentials.filter((item) => item.type === "education");
+
   return (
     <main className="app-bg min-h-screen px-5 py-10 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl">
@@ -388,6 +526,76 @@ export default function Admin() {
         {loadingData ? <p className="mb-6 text-sm text-slate-500">Loading admin data...</p> : null}
 
         <section className="mb-8 grid gap-6 lg:grid-cols-2">
+          <form onSubmit={submitResume} className="card p-6">
+            <h2 className="text-2xl font-semibold text-slate-950">Resume</h2>
+            <p className="mt-1 text-sm text-slate-500">Upload the latest resume PDF used by the hero button.</p>
+
+            <div className="mt-5 space-y-4">
+              <input
+                className="field"
+                placeholder="Resume title"
+                value={resumeForm.title}
+                onChange={(event) => setResumeForm((prev) => ({ ...prev, title: event.target.value }))}
+              />
+
+              <input
+                type="file"
+                className="field py-3"
+                accept="application/pdf"
+                onChange={(event) => setResumeFile(event.target.files?.[0] || null)}
+              />
+
+              <div className="text-xs text-slate-500">
+                {resumeFile ? (
+                  <span>Selected file: {resumeFile.name}</span>
+                ) : resumeForm.fileUrl ? (
+                  <a
+                    href={resumeForm.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-slate-700 underline-offset-4 hover:underline"
+                  >
+                    Open current resume
+                  </a>
+                ) : (
+                  <span>Upload a PDF resume to activate the hero button.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <button className="btn-primary" type="submit">
+                Update Resume
+              </button>
+              <button className="btn-soft" type="button" onClick={resetResumeForm}>
+                Reset
+              </button>
+            </div>
+          </form>
+
+          <div className="card p-6">
+            <h3 className="text-xl font-semibold text-slate-950">Resume Preview</h3>
+            <p className="mt-1 text-xs text-slate-500">The hero section uses this file as the resume button target.</p>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-sm font-medium text-slate-900">{resumeForm.title || "Resume"}</p>
+              {resumeForm.fileUrl ? (
+                <a
+                  href={resumeForm.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                >
+                  View Resume PDF
+                </a>
+              ) : (
+                <p className="mt-2 text-sm text-slate-500">No resume uploaded yet.</p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-8 grid gap-6 lg:grid-cols-2">
           <form onSubmit={submitProject} className="card p-6">
             <h2 className="text-2xl font-semibold text-slate-950">Projects</h2>
             <p className="mt-1 text-sm text-slate-500">Create or update portfolio projects.</p>
@@ -410,20 +618,26 @@ export default function Admin() {
               <input
                 className="field"
                 placeholder="LinkedIn link"
-                value={projectForm.githubLink}
-                onChange={(event) => setProjectForm((prev) => ({ ...prev, githubLink: event.target.value }))}
+                value={projectForm.linkedinLink}
+                onChange={(event) => setProjectForm((prev) => ({ ...prev, linkedinLink: event.target.value }))}
               />
               <input
                 className="field"
-                placeholder="Explanation link (optional)"
-                value={projectForm.githubLink2}
-                onChange={(event) => setProjectForm((prev) => ({ ...prev, githubLink2: event.target.value }))}
+                placeholder="GitHub link"
+                value={projectForm.githubLink}
+                onChange={(event) => setProjectForm((prev) => ({ ...prev, githubLink: event.target.value }))}
               />
               <input
                 className="field"
                 placeholder="Live link"
                 value={projectForm.liveLink}
                 onChange={(event) => setProjectForm((prev) => ({ ...prev, liveLink: event.target.value }))}
+              />
+              <input
+                className="field"
+                placeholder="Other link"
+                value={projectForm.otherLink}
+                onChange={(event) => setProjectForm((prev) => ({ ...prev, otherLink: event.target.value }))}
               />
               <input
                 className="field"
@@ -596,7 +810,6 @@ export default function Admin() {
               >
                 <option value="certificate">Certificate</option>
                 <option value="marksheet">Marksheet</option>
-                <option value="education">Education</option>
                 <option value="achievement">Achievement</option>
               </select>
 
@@ -606,19 +819,6 @@ export default function Admin() {
                 value={credentialForm.year}
                 onChange={(event) => setCredentialForm((prev) => ({ ...prev, year: event.target.value }))}
               />
-
-              <select
-                className="field"
-                value={credentialForm.priority}
-                onChange={(event) => setCredentialForm((prev) => ({ ...prev, priority: event.target.value }))}
-              >
-                <option value="">Select priority (optional)</option>
-                {PRIORITY_OPTIONS.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
 
               <input
                 className="field"
@@ -636,10 +836,48 @@ export default function Admin() {
 
               <input
                 className="field sm:col-span-2"
-                placeholder="Certificate URL / Marksheet URL"
-                value={credentialForm.fileUrl}
-                onChange={(event) => setCredentialForm((prev) => ({ ...prev, fileUrl: event.target.value }))}
+                placeholder="Certificate ID"
+                value={credentialForm.credential}
+                onChange={(event) => setCredentialForm((prev) => ({ ...prev, credential: event.target.value }))}
               />
+
+              <input
+                className="field sm:col-span-2"
+                placeholder="Live certificate URL"
+                value={credentialForm.liveUrl}
+                onChange={(event) => setCredentialForm((prev) => ({ ...prev, liveUrl: event.target.value }))}
+              />
+
+              <input
+                type="file"
+                className="field sm:col-span-2 py-3"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                onChange={(event) => setCredentialFile(event.target.files?.[0] || null)}
+              />
+
+              <div className="sm:col-span-2 text-xs text-slate-500">
+                {credentialFile ? (
+                  <span>Selected image: {credentialFile.name}</span>
+                ) : credentialForm.fileUrl ? (
+                  <div className="space-y-2">
+                    <img
+                      src={credentialForm.fileUrl}
+                      alt="Current certificate"
+                      className="h-40 w-full rounded-xl border border-slate-200 object-cover"
+                    />
+                    <a
+                      href={credentialForm.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-slate-700 underline-offset-4 hover:underline"
+                    >
+                      Open current certificate image
+                    </a>
+                  </div>
+                ) : (
+                  <span>Upload a certificate image (optional).</span>
+                )}
+              </div>
 
               <textarea
                 className="field min-h-28 sm:col-span-2"
@@ -662,10 +900,10 @@ export default function Admin() {
           </form>
 
           <div className="card p-6">
-            <h3 className="text-xl font-semibold text-slate-950">Credential List</h3>
-            <p className="mt-1 text-xs text-slate-500">Drag and drop cards to auto-set priority.</p>
+            <h3 className="text-xl font-semibold text-slate-950">Certificate List</h3>
+            <p className="mt-1 text-xs text-slate-500">Drag and drop cards to reorder certificates.</p>
             <div className="mt-4 space-y-3">
-              {credentials.map((item) => (
+              {certificateItems.map((item) => (
                 <div
                   key={item._id}
                   draggable
@@ -679,9 +917,141 @@ export default function Admin() {
                   <p className="mt-1 text-sm text-slate-500">
                     {[item.type, item.year, item.score].filter(Boolean).join(" • ")}
                   </p>
-                  <p className="mt-1 text-xs font-medium text-slate-500">Priority: {item.priority || "Not set"}</p>
+                  {item.fileUrl ? (
+                    <img
+                      src={item.fileUrl}
+                      alt={item.title}
+                      className="mt-3 h-24 w-full rounded-lg border border-slate-200 object-cover"
+                    />
+                  ) : null}
+                  {item.credential || item.liveUrl ? (
+                    <div className="mt-2 space-y-1 text-xs text-slate-500">
+                      {item.credential ? <p>Certificate ID: {item.credential}</p> : null}
+                      {item.liveUrl ? (
+                        <a href={item.liveUrl} target="_blank" rel="noreferrer" className="font-medium text-slate-700 underline-offset-4 hover:underline">
+                          Live certificate link
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <div className="mt-3 flex gap-2">
                     <button className="btn-soft" type="button" onClick={() => editCredential(item)}>
+                      Edit
+                    </button>
+                    <button className="btn-primary" type="button" onClick={() => removeCredential(item._id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8 grid gap-6 lg:grid-cols-2">
+          <form onSubmit={submitEducation} className="card p-6">
+            <h2 className="text-2xl font-semibold text-slate-950">Education</h2>
+            <p className="mt-1 text-sm text-slate-500">Add your education details separately from certificates.</p>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <input
+                className="field sm:col-span-2"
+                placeholder="Course / Degree Title"
+                value={educationForm.title}
+                onChange={(event) => setEducationForm((prev) => ({ ...prev, title: event.target.value }))}
+                required
+              />
+
+              <input
+                className="field"
+                placeholder="Institution"
+                value={educationForm.institution}
+                onChange={(event) => setEducationForm((prev) => ({ ...prev, institution: event.target.value }))}
+              />
+
+              <input
+                className="field"
+                placeholder="Year"
+                value={educationForm.year}
+                onChange={(event) => setEducationForm((prev) => ({ ...prev, year: event.target.value }))}
+              />
+
+              <input
+                className="field sm:col-span-2"
+                placeholder="Score/GPA/Percentage"
+                value={educationForm.score}
+                onChange={(event) => setEducationForm((prev) => ({ ...prev, score: event.target.value }))}
+              />
+
+              <textarea
+                className="field min-h-28 sm:col-span-2"
+                placeholder="Description"
+                value={educationForm.description}
+                onChange={(event) => setEducationForm((prev) => ({ ...prev, description: event.target.value }))}
+              />
+
+              <input
+                type="file"
+                className="field sm:col-span-2 py-3"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                onChange={(event) => setEducationImage(event.target.files?.[0] || null)}
+              />
+
+              <div className="sm:col-span-2 text-xs text-slate-500">
+                {educationImage ? (
+                  <span>Selected image: {educationImage.name}</span>
+                ) : educationForm.fileUrl ? (
+                  <a
+                    href={educationForm.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-slate-700 underline-offset-4 hover:underline"
+                  >
+                    View current education image
+                  </a>
+                ) : (
+                  <span>Upload an education image (optional).</span>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <button className="btn-primary" type="submit">
+                {editingEducationId ? "Update Education" : "Add Education"}
+              </button>
+              {editingEducationId ? (
+                <button className="btn-soft" type="button" onClick={resetEducationForm}>
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          </form>
+
+          <div className="card p-6">
+            <h3 className="text-xl font-semibold text-slate-950">Education List</h3>
+            <p className="mt-1 text-xs text-slate-500">Manage your education entries here.</p>
+            <div className="mt-4 space-y-3">
+              {educationItems.map((item) => (
+                <div key={item._id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="font-semibold text-slate-900">{item.title}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {[item.institution, item.year, item.score].filter(Boolean).join(" • ")}
+                  </p>
+                  {item.description ? (
+                    <p className="mt-1 text-sm text-slate-500 line-clamp-2">{item.description}</p>
+                  ) : null}
+                  {item.fileUrl ? (
+                    <a
+                      href={item.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                    >
+                      View Image
+                    </a>
+                  ) : null}
+                  <div className="mt-3 flex gap-2">
+                    <button className="btn-soft" type="button" onClick={() => editEducation(item)}>
                       Edit
                     </button>
                     <button className="btn-primary" type="button" onClick={() => removeCredential(item._id)}>

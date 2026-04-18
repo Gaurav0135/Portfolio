@@ -1,5 +1,34 @@
 import Credential from "../models/Credential.js";
 
+const normalizeCredentialAssetUrl = (url, req) => {
+  if (!url) return url;
+
+  // Normalize local disk paths like public\uploads\file.jpg to /uploads/file.jpg
+  const slashNormalized = String(url).replace(/\\/g, "/");
+  if (slashNormalized.includes("/public/uploads/")) {
+    const fileName = slashNormalized.split("/public/uploads/").pop();
+    const relativePath = `/uploads/${fileName}`;
+    return `${req.protocol}://${req.get("host")}${relativePath}`;
+  }
+
+  if (slashNormalized.startsWith("public/uploads/")) {
+    const fileName = slashNormalized.split("public/uploads/").pop();
+    const relativePath = `/uploads/${fileName}`;
+    return `${req.protocol}://${req.get("host")}${relativePath}`;
+  }
+
+  if (slashNormalized.startsWith("/uploads/")) {
+    return `${req.protocol}://${req.get("host")}${slashNormalized}`;
+  }
+
+  // Keep remote URLs unchanged (Cloudinary/live links, etc.)
+  if (/^https?:\/\//i.test(slashNormalized)) {
+    return slashNormalized;
+  }
+
+  return slashNormalized;
+};
+
 export const getCredentials = async (req, res) => {
   try {
     const credentials = await Credential.find().sort({ createdAt: -1 });
@@ -8,7 +37,14 @@ export const getCredentials = async (req, res) => {
       const bPriority = Number.isFinite(b.priority) ? b.priority : Number.MAX_SAFE_INTEGER;
       return aPriority - bPriority;
     });
-    res.json(credentials);
+    
+    // Transform file URLs to ensure public delivery
+    const credentialsWithPublicUrls = credentials.map((cred) => ({
+      ...cred.toObject(),
+      fileUrl: normalizeCredentialAssetUrl(cred.fileUrl, req),
+    }));
+    
+    res.json(credentialsWithPublicUrls);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -16,17 +52,26 @@ export const getCredentials = async (req, res) => {
 
 export const addCredential = async (req, res) => {
   try {
-    const { title, type, institution, score, year, description, fileUrl, priority } = req.body;
+    const { title, type, institution, score, year, description, credential: credentialValue, liveUrl, fileUrl } = req.body;
+    const normalizedType = (type || "certificate").toLowerCase();
+
+    if (req.file?.mimetype && !req.file.mimetype.startsWith("image/")) {
+      return res.status(400).json({ error: "Only image files are allowed for certificates." });
+    }
+
+    const uploadedFileUrl = req.file?.filename ? `/uploads/${req.file.filename}` : fileUrl || "";
 
     const credential = new Credential({
       title,
-      type,
+      type: normalizedType,
       institution,
       score,
       year,
       description,
-      fileUrl,
-      priority: priority ? Number(priority) : null,
+      credential: credentialValue,
+      liveUrl,
+      fileUrl: uploadedFileUrl,
+      priority: null,
     });
 
     const saved = await credential.save();
@@ -38,26 +83,38 @@ export const addCredential = async (req, res) => {
 
 export const updateCredential = async (req, res) => {
   try {
-    const { title, type, institution, score, year, description, fileUrl, priority } = req.body;
+    const { title, type, institution, score, year, description, credential: credentialValue, liveUrl, fileUrl } = req.body;
+    const normalizedType = (type || "certificate").toLowerCase();
+    const existingCredential = await Credential.findById(req.params.id);
+
+    if (req.file?.mimetype && !req.file.mimetype.startsWith("image/")) {
+      return res.status(400).json({ error: "Only image files are allowed for certificates." });
+    }
+
+    if (!existingCredential) {
+      return res.status(404).json({ msg: "Credential not found" });
+    }
+
+    const uploadedFileUrl = req.file?.filename
+      ? `/uploads/${req.file.filename}`
+      : fileUrl || existingCredential.fileUrl || "";
 
     const updated = await Credential.findByIdAndUpdate(
       req.params.id,
       {
         title,
-        type,
+        type: normalizedType,
         institution,
         score,
         year,
         description,
-        fileUrl,
-        priority: priority ? Number(priority) : null,
+        credential: credentialValue,
+        liveUrl,
+        fileUrl: uploadedFileUrl,
+        priority: existingCredential.priority,
       },
       { new: true, runValidators: true }
     );
-
-    if (!updated) {
-      return res.status(404).json({ msg: "Credential not found" });
-    }
 
     res.json(updated);
   } catch (err) {

@@ -4,8 +4,10 @@ import { API } from "../api/axios";
 const initialForm = {
   title: "",
   description: "",
+  linkedinLink: "",
   githubLink: "",
   liveLink: "",
+  otherLink: "",
   techStack: "",
 };
 
@@ -30,8 +32,10 @@ export default function ProjectForm({ onProjectAdded }) {
       const payload = new FormData();
       payload.append("title", form.title);
       payload.append("description", form.description);
+      payload.append("linkedinLink", form.linkedinLink);
       payload.append("githubLink", form.githubLink);
       payload.append("liveLink", form.liveLink);
+      payload.append("otherLink", form.otherLink);
       payload.append("techStack", form.techStack);
 
       if (image) {
@@ -94,6 +98,17 @@ export default function ProjectForm({ onProjectAdded }) {
           </div>
 
           <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-900">LinkedIn Link</label>
+            <input
+              name="linkedinLink"
+              value={form.linkedinLink}
+              onChange={handleChange}
+              className="field"
+              placeholder="https://linkedin.com/in/..."
+            />
+          </div>
+
+          <div>
             <label className="mb-2 block text-sm font-semibold text-slate-900">GitHub Link</label>
             <input
               name="githubLink"
@@ -101,6 +116,17 @@ export default function ProjectForm({ onProjectAdded }) {
               onChange={handleChange}
               className="field"
               placeholder="https://github.com/..."
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-900">Other Link</label>
+            <input
+              name="otherLink"
+              value={form.otherLink}
+              onChange={handleChange}
+              className="field"
+              placeholder="https://..."
             />
           </div>
 

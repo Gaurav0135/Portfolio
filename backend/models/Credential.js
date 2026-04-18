@@ -32,6 +32,16 @@ const credentialSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    credential: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    liveUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     fileUrl: {
       type: String,
       default: "",
