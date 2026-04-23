@@ -7,7 +7,7 @@ const isBlockedCloudinaryRawUrl = (url) => {
 };
 
 export const getFallbackResumeUrl = () => {
-  return import.meta.env.VITE_RESUME_FALLBACK_URL || DEFAULT_FALLBACK_RESUME_URL;
+  return DEFAULT_FALLBACK_RESUME_URL;
 };
 
 export const resolveResumeUrl = (apiResumeUrl) => {
