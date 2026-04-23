@@ -2,9 +2,42 @@ import { useEffect, useState } from "react";
 import { API } from "../api/axios";
 import certificatePlaceholder from "../assets/certificate-placeholder.svg";
 
+const uploadToStaticFileMap = {
+  "gaurav-java-1776491383267-846694257.pdf": "/certificates/java-certificate.pdf",
+  "gaurav-nvidia-1776491364257-848663905.pdf": "/certificates/nvidia-certificate.pdf",
+  "Screenshot 2026-04-18 123608-1776496232828-803330293.png":
+    "/certificates/Screenshot 2026-04-18 123608-1776496232828-803330293.png",
+  "Screenshot 2026-04-18 123625-1776496065485-454282282.png":
+    "/certificates/Screenshot 2026-04-18 123625-1776496065485-454282282.png",
+};
+
 const isBlockedCloudinaryRawUrl = (url) => {
   if (!url) return false;
   return /^https?:\/\/res\.cloudinary\.com\/[^/]+\/raw\/upload\//i.test(String(url));
+};
+
+const getPathFileName = (url) => {
+  if (!url) return "";
+
+  try {
+    const maybeAbsolute = /^https?:\/\//i.test(url) ? new URL(url).pathname : url;
+    const fileName = maybeAbsolute.split("/").pop() || "";
+    return decodeURIComponent(fileName);
+  } catch {
+    return "";
+  }
+};
+
+const resolveUploadPathToStaticUrl = (url) => {
+  if (!url) return "";
+
+  const normalized = String(url).replace(/\\/g, "/");
+  const isUploadPath = normalized.includes("/uploads/") || normalized.startsWith("uploads/");
+
+  if (!isUploadPath) return "";
+
+  const fileName = getPathFileName(normalized);
+  return uploadToStaticFileMap[fileName] || "";
 };
 
 const staticCertificateFallbacks = [
@@ -34,7 +67,12 @@ const getStaticCertificateFallback = (item) => {
 
 const resolveCertificateFileUrl = (item) => {
   const apiFileUrl = item?.fileUrl || "";
+  const uploadPathStaticUrl = resolveUploadPathToStaticUrl(apiFileUrl);
   const staticFallback = getStaticCertificateFallback(item);
+
+  if (uploadPathStaticUrl) {
+    return uploadPathStaticUrl;
+  }
 
   if (!apiFileUrl) {
     return staticFallback || "";
