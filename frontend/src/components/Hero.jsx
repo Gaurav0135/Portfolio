@@ -131,7 +131,7 @@ export default function Hero() {
           transition={{ delay: 0.5 }}
           className="mt-7 text-xl font-semibold italic tracking-tight text-white sm:text-3xl lg:text-5xl"
         >
-          Final Year CSE Student | Frontend Developer
+          MERN Stack Developer | Python Enthusiast
         </motion.p>
 
         <motion.p
