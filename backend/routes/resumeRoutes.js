@@ -1,10 +1,15 @@
 import express from "express";
-import { upload } from "../middleware/upload.js";
-import { getCurrentResume, upsertCurrentResume } from "../controllers/resumeController.js";
+import { uploadResume } from "../middleware/upload.js";
+import {
+	downloadCurrentResume,
+	getCurrentResume,
+	upsertCurrentResume,
+} from "../controllers/resumeController.js";
 
 const router = express.Router();
 
 router.get("/current", getCurrentResume);
-router.put("/current", upload.single("file"), upsertCurrentResume);
+router.get("/current/download", downloadCurrentResume);
+router.put("/current", uploadResume.single("file"), upsertCurrentResume);
 
 export default router;

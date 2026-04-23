@@ -77,5 +77,36 @@ const uploadToDisk = multer({
   },
 });
 
+// Dedicated Cloudinary storage for resume PDFs (raw delivery)
+const resumeCloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => {
+    const ext = path.extname(file.originalname || "").replace(".", "").toLowerCase();
+
+    return {
+      folder: "portfolio/resumes",
+      resource_type: "raw",
+      type: "upload",
+      format: ext || "pdf",
+    };
+  },
+});
+
+const uploadResumeToCloudinary = multer({
+  storage: resumeCloudinaryStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/pdf") {
+      cb(null, true);
+      return;
+    }
+
+    cb(new Error("Only PDF files are allowed for the resume."));
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+});
+
 // Export a combined upload middleware
 export const upload = uploadToDisk;
+export const uploadResume = uploadResumeToCloudinary;
