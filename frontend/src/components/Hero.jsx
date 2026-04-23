@@ -56,26 +56,12 @@
 //   );
 // }
 
-import { useEffect, useState } from "react";
 import { FaGithub, FaLinkedin, FaEnvelope, FaDownload } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { API } from "../api/axios";
+import { getFallbackResumeUrl } from "../utils/resumeUrl";
 
 export default function Hero() {
-  const [resumeUrl, setResumeUrl] = useState("");
-
-  useEffect(() => {
-    const fetchResume = async () => {
-      try {
-        const res = await API.get("/resume/current");
-        setResumeUrl(res.data?.fileUrl || "");
-      } catch {
-        setResumeUrl("");
-      }
-    };
-
-    fetchResume();
-  }, []);
+  const resumeUrl = getFallbackResumeUrl();
 
   return (
     <section
@@ -151,19 +137,17 @@ export default function Hero() {
           className="mt-12 flex flex-col items-center gap-6 sm:mt-14"
         >
           <div className="flex flex-wrap items-center justify-center gap-3">
-            {resumeUrl ? (
-              <motion.a
-                whileHover={{ scale: 1.05, y: -2 }}
-                href={resumeUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-primary inline-flex w-full items-center justify-center gap-2 px-5 py-3.5 text-sm shadow-[0_0_24px_rgba(34,211,238,0.16)] sm:w-auto sm:px-6 sm:py-4 sm:text-base"
-                aria-label="Resume"
-              >
-                <FaDownload size={18} />
-                Resume
-              </motion.a>
-            ) : null}
+            <motion.a
+              whileHover={{ scale: 1.05, y: -2 }}
+              href={resumeUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-primary inline-flex w-full items-center justify-center gap-2 px-5 py-3.5 text-sm shadow-[0_0_24px_rgba(34,211,238,0.16)] sm:w-auto sm:px-6 sm:py-4 sm:text-base"
+              aria-label="Resume"
+            >
+              <FaDownload size={18} />
+              Resume
+            </motion.a>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3">

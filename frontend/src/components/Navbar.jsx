@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { API } from "../api/axios";
+import { useState } from "react";
+import { getFallbackResumeUrl } from "../utils/resumeUrl";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const [resumeUrl, setResumeUrl] = useState("");
+  const resumeUrl = getFallbackResumeUrl();
   const links = [
     { href: "#home", label: "Home" },
     { href: "#projects", label: "Projects" },
@@ -12,28 +12,11 @@ export default function Navbar() {
     { href: "#contact", label: "Contact" },
   ];
 
-  useEffect(() => {
-    const fetchResume = async () => {
-      try {
-        const res = await API.get("/resume/current");
-        setResumeUrl(res.data?.fileUrl || "");
-      } catch {
-        setResumeUrl("");
-      }
-    };
-
-    fetchResume();
-  }, []);
-
-  const logoProps = resumeUrl
-    ? {
-        href: resumeUrl,
-        target: "_blank",
-        rel: "noreferrer",
-      }
-    : {
-        href: "#home",
-      };
+  const logoProps = {
+    href: resumeUrl,
+    target: "_blank",
+    rel: "noreferrer",
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-cyan-400/10 bg-[#02040bcc] backdrop-blur-2xl">
