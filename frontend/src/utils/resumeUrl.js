@@ -1,4 +1,4 @@
-const DEFAULT_FALLBACK_RESUME_URL = "/resume.pdf";
+const DEFAULT_FALLBACK_RESUME_URL = "/gaurav_resume.pdf";
 
 const isBlockedCloudinaryRawUrl = (url) => {
   if (!url) return false;
