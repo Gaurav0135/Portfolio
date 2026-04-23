@@ -3,9 +3,8 @@ import { API } from "../api/axios";
 import certificatePlaceholder from "../assets/certificate-placeholder.svg";
 
 export default function Education() {
-  const [items, setItems] = useState([]);
+  const [educationItems, setEducationItems] = useState([]);
   const [error, setError] = useState("");
-  const [brokenImageIds, setBrokenImageIds] = useState({});
 
   const fallbackEducationItems = [
     {
@@ -28,13 +27,66 @@ export default function Education() {
     },
   ];
 
+  const staticCertificationItems = [
+    {
+      id: "cert-java",
+      type: "certificate",
+      title: "Java Certificate",
+      place: "Certification",
+      meta: "Certificate",
+      detail: "Java programming certification hosted directly on the portfolio frontend.",
+      bullets: [],
+      credential: "",
+      liveUrl: "",
+      fileUrl: "/certificates/java-certificate.pdf",
+    },
+    {
+      id: "cert-nvidia",
+      type: "certificate",
+      title: "NVIDIA Certificate",
+      place: "Certification",
+      meta: "Certificate",
+      detail: "NVIDIA certification hosted directly on the portfolio frontend.",
+      bullets: [],
+      credential: "",
+      liveUrl: "",
+      fileUrl: "/certificates/nvidia-certificate.pdf",
+    },
+    {
+      id: "cert-screenshot-1",
+      type: "certificate",
+      title: "Certificate Screenshot 1",
+      place: "Certification",
+      meta: "Certificate Preview",
+      detail: "Additional certificate preview hosted directly on the portfolio frontend.",
+      bullets: [],
+      credential: "",
+      liveUrl: "",
+      fileUrl: "/certificates/Screenshot 2026-04-18 123608-1776496232828-803330293.png",
+    },
+    {
+      id: "cert-screenshot-2",
+      type: "certificate",
+      title: "Certificate Screenshot 2",
+      place: "Certification",
+      meta: "Certificate Preview",
+      detail: "Additional certificate preview hosted directly on the portfolio frontend.",
+      bullets: [],
+      credential: "",
+      liveUrl: "",
+      fileUrl: "/certificates/Screenshot 2026-04-18 123625-1776496065485-454282282.png",
+    },
+  ];
+
   useEffect(() => {
     const fetchCredentials = async () => {
       try {
         const res = await API.get("/credentials");
-        const mapped = res.data.map((item) => ({
+        const mappedEducation = res.data
+          .filter((item) => (item.type || "").toLowerCase() === "education")
+          .map((item) => ({
           id: item._id || `${item.title}-${item.year || ""}`,
-          type: (item.type || "certificate").toLowerCase(),
+          type: "education",
           title: item.title,
           place: item.institution || "",
           meta: [item.type, item.year].filter(Boolean).join(" • "),
@@ -44,7 +96,7 @@ export default function Education() {
           liveUrl: item.liveUrl || "",
           fileUrl: item.fileUrl || "",
         }));
-        setItems(mapped);
+        setEducationItems(mappedEducation);
       } catch (err) {
         setError(err.response?.data?.error || "Unable to load credentials right now.");
       }
@@ -53,9 +105,9 @@ export default function Education() {
     fetchCredentials();
   }, []);
 
-  const sourceItems = items.length > 0 ? items : fallbackEducationItems;
-  const educationList = sourceItems.filter((item) => item.type === "education");
-  const certificationList = sourceItems.filter((item) => item.type !== "education");
+  const sourceEducationItems = educationItems.length > 0 ? educationItems : fallbackEducationItems;
+  const educationList = sourceEducationItems;
+  const certificationList = staticCertificationItems;
 
   const renderCard = (item, showCertificatePreview) => (
     <article
@@ -91,7 +143,7 @@ export default function Education() {
         <div className="mt-auto flex flex-wrap gap-3 pt-6">
           {item.fileUrl ? (
             <a
-              href={item.fileUrl && !brokenImageIds[item.id] ? item.fileUrl : certificatePlaceholder}
+              href={item.fileUrl || certificatePlaceholder}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center rounded-full border border-cyan-400/20 bg-white/5 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:border-cyan-300/40 hover:bg-cyan-400/10 hover:text-white"
